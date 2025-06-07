@@ -54,13 +54,13 @@ class HanauClient {
           this._handleMessage(msg);
         }
       } catch (err) {
-        console.error("hanau > Failed to parse JSON message", err);
+        console.error("hanau > failed to parse JSON message", err);
       }
     };
 
     this.ws.onclose = (event) => {
       this.alive = false;
-      this.closeListeners.forEach((listener) => listener(event.reason || "Connection closed"));
+      this.closeListeners.forEach((listener) => listener(event.reason || "connection closed"));
       this._stopPing();
       if (this.mayReconnect) {
         this._reconnect();
@@ -190,7 +190,7 @@ class HanauClient {
 
   _reconnect() {
     if (this.reconnectCount > 5) {
-      console.error("hanau > Too many reconnects, giving up");
+      console.error("hanau > too many reconnects, giving up");
       this.mayReconnect = false;
       return;
     }
@@ -198,7 +198,7 @@ class HanauClient {
     this.reconnectCount++;
 
     setTimeout(() => {
-      console.log("hanau > Reconnecting...");
+      console.log("hanau > reconnecting...");
       this.open();
     }, 1000 * this.reconnectCount);
   }

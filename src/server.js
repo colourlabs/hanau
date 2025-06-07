@@ -15,10 +15,24 @@ import { WebSocketServer } from "ws";
 
 class HanauServer {
   /**
-   * @param {{ port: number }} options
+   * @param {{ port?: number, wss?: WebSocketServer }} options
    */
-  constructor({ port }) {
-    this.wss = new WebSocketServer({ port });
+  constructor({ port, wss }) {
+    if (wss) {
+      this.wss = wss;
+    } else if (port) {
+      this.wss = new WebSocketServer({
+        port,
+        handleProtocols: (protocols, request) => {
+          if (protocols.has("hanau")) {
+            return "hanau";
+          }
+          return false;
+        },
+      });
+    } else {
+      throw new Error("must provide a port or a WebSocketServer instance");
+    }
 
     /** @type {Map<string, HanauWebSocket>} */
     this.clients = new Map(); // sessionId -> ws
@@ -73,7 +87,7 @@ class HanauServer {
           if (!this.clientHistories.has(sessionId)) {
             this.clientHistories.set(sessionId, new Map());
           }
-        
+
           // replay missed messages
           const history = this.clientHistories.get(sessionId);
           for (const [id, packet] of history.entries()) {
@@ -182,12 +196,20 @@ class HanauServer {
       data,
     };
 
+    // check if backpressure is 5MB and if it is then just nuke the connection
+    if (ws.bufferedAmount > 5e6) {
+      ws.terminate();
+      this.clients.delete(sessionId);
+      this.disconnectionListeners.forEach((cb) => cb(sessionId));
+      return;
+    }
+
     if (!this.clientHistories.has(sessionId)) {
       this.clientHistories.set(sessionId, new Map());
     }
     const history = this.clientHistories.get(sessionId);
     history.set(packet.id, packet);
-  
+
     // history limit is 100
     if (history.size > 100) {
       const oldestId = Math.min(...history.keys());
@@ -218,7 +240,7 @@ class HanauServer {
   }
 
   /**
-   * ow-level send helper
+   * Low-level send helper
    * @param {HanauWebSocket} ws
    * @param {Packet} packet
    */
