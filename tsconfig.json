@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "allowJs": true, 
+    "declaration": true, 
+    "emitDeclarationOnly": true, 
+    "outDir": "types", 
+    "checkJs": true,
+    "moduleResolution": "node",
+    "target": "ESNext",
+    "module": "ESNext",
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.js"],
+  "exclude": ["node_modules"]
+}

@@ -13,9 +13,15 @@ import { WebSocketServer } from "ws";
  * @property {any} data
  */
 
+/**
+ * @typedef {Object} HanauServerOptions
+ * @property {number} [port]
+ * @property {WebSocketServer} [wss]
+ */
+
 class HanauServer {
   /**
-   * @param {{ port?: number, wss?: WebSocketServer }} options
+   * @param {HanauServerOptions} options
    */
   constructor({ port, wss }) {
     if (wss) {
@@ -36,12 +42,17 @@ class HanauServer {
 
     /** @type {Map<string, HanauWebSocket>} */
     this.clients = new Map(); // sessionId -> ws
+
+    /** @type {Map<string, Map<number, Packet>>} */
     this.clientHistories = new Map(); // sessionId -> Map<packetId, Packet>
 
     /** @type {Record<string, (data: any, sessionId: string, packetId: number) => void>} */
     this.messageListeners = {};
 
+    /** @type {Array<(sessionId: string) => void>} */
     this.connectionListeners = [];
+
+    /** @type {Array<(sessionId: string) => void>} */
     this.disconnectionListeners = [];
 
     // Handle new connections
@@ -83,13 +94,15 @@ class HanauServer {
           extWs.sessionId = sessionId;
           this.clients.set(sessionId, extWs);
 
-          if (!this.clientHistories) this.clientHistories = new Map();
           if (!this.clientHistories.has(sessionId)) {
             this.clientHistories.set(sessionId, new Map());
           }
 
           // replay missed messages
           const history = this.clientHistories.get(sessionId);
+          if (!history) {
+            return;
+          }
           for (const [id, packet] of history.entries()) {
             if (id > lastReceivedId) {
               this._send(extWs, packet);
@@ -130,6 +143,7 @@ class HanauServer {
       extWs.on("close", () => {
         if (extWs.sessionId) {
           this.clients.delete(extWs.sessionId);
+          //@ts-ignore
           this.disconnectionListeners.forEach((fn) => fn(extWs.sessionId));
         }
       });
@@ -141,6 +155,7 @@ class HanauServer {
           client.terminate();
           if (client.sessionId) {
             this.clients.delete(client.sessionId);
+            //@ts-ignore
             this.disconnectionListeners.forEach((fn) => fn(client.sessionId));
           }
           return;
@@ -208,6 +223,11 @@ class HanauServer {
       this.clientHistories.set(sessionId, new Map());
     }
     const history = this.clientHistories.get(sessionId);
+
+    if (!history) {
+      return;
+    }
+
     history.set(packet.id, packet);
 
     // history limit is 100
