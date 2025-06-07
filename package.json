@@ -1,0 +1,17 @@
+{
+  "name": "hanau",
+  "type": "module",  
+  "exports": {
+    "import": "./src/index.js"
+  },
+  "main": "./src/index.js",
+  "version": "1.0.0",
+  "description": "a custom WebSocket wrapper that doesn't suck",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "colourlabs",
+  "license": "ISC",
+  "packageManager": "pnpm@10.11.0"
+}

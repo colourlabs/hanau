@@ -1,0 +1,197 @@
+//@ts-check
+
+/**
+ * @typedef {Object} Packet
+ * @property {number} id
+ * @property {string | number} command
+ * @property {any} data
+ */
+
+class HanauClient {
+  /**
+   * Create client
+   *
+   * @param {string} uri
+   */
+  constructor(uri) {
+    this.uri = uri;
+    this.ws = null; // WebSocket
+    this.alive = false;
+    this.lastSentId = 0;
+    this.lastReceivedId = 0;
+    this.reconnectCount = 0;
+    this.mayReconnect = true;
+
+    this.messageListeners = {};
+    this.openListeners = [];
+    this.closeListeners = [];
+  }
+
+  /**
+   * Opens the WebSocket connection
+   */
+  open() {
+    this.ws = new WebSocket(this.uri);
+    this.ws.onopen = () => {
+      this.alive = true;
+      this.reconnectCount = 0;
+      this.openListeners.forEach((listener) => listener());
+      this._startPing();
+    };
+
+    this.ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+
+        if (msg.command == "pong") {
+          this.alive = true;
+        } else {
+          this._handleMessage(msg);
+        }
+      } catch (err) {
+        console.error("Failed to parse JSON message", err);
+      }
+    };
+
+    this.ws.onclose = (event) => {
+      this.alive = false;
+      this.closeListeners.forEach((listener) => listener(event.reason || "Connection closed"));
+      this._stopPing();
+      if (this.mayReconnect) {
+        this._reconnect();
+      }
+    };
+
+    this.ws.onerror = (event) => {
+      console.error("WebSocket error:", event);
+    };
+  }
+
+  close() {
+    this.mayReconnect = false;
+    if (this.ws) this.ws.close();
+  }
+
+  /**
+   * Handle incoming messages
+   *
+   * @param {Packet} msg
+   */
+  _handleMessage(msg) {
+    if (msg.id) {
+      if (msg.id <= this.lastReceivedId) {
+        return;
+      }
+      this.lastReceivedId = msg.id;
+    }
+
+    if (msg.command && this.messageListeners[msg.command]) {
+      this.messageListeners[msg.command].forEach((listener) => listener(msg.data));
+    }
+  }
+
+  /**
+   * Send a command with data to the server
+   *
+   * @param {string | number} command
+   * @param {any} data
+   */
+  send(command, data) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn(`hanau > WebSocket is not open, dropping packet ${command}`);
+      return;
+    };
+
+    /** @type {Packet} */
+    const packet = {
+      id: ++this.lastSentId,
+      command,
+      data,
+    };
+
+    this.ws.send(JSON.stringify(packet));
+  }
+
+  /**
+   * Register a listener for a specific command
+   *
+   * @param {string | number} command
+   * @param {(data: any) => void} listener
+   */
+  on(command, listener) {
+    if (!this.messageListeners[command]) {
+      this.messageListeners[command] = [];
+    }
+    this.messageListeners[command].push(listener);
+  }
+
+  /**
+   * Unregister a listener for a specific command
+   *
+   * @param {string | number} command
+   * @param {(data: any) => void} [listener]
+   */
+  off(command, listener) {
+    if (!this.messageListeners[command]) return;
+    if (!listener) {
+      this.messageListeners[command] = [];
+    } else {
+      this.messageListeners[command] = this.messageListeners[command].filter((l) => l !== listener);
+    }
+  }
+
+  /**
+   * This will be called when the WebSocket connection opens
+   *
+   * @param {Function} listener
+   */
+  onOpen(listener) {
+    this.openListeners.push(listener);
+  }
+
+  /**
+   * This will be called when the WebSocket connection closes
+   *
+   * @param {Function} listener
+   */
+  onClose(listener) {
+    this.closeListeners.push(listener);
+  }
+
+  _startPing() {
+    if (this.pingInterval) clearInterval(this.pingInterval);
+
+    this.pingInterval = setInterval(() => {
+      if (!this.alive) {
+        console.warn("Ping timeout, reconnecting...");
+        this._reconnect();
+      } else {
+        this.alive = false;
+        this.send("ping", null);
+      }
+    }, 5000);
+  }
+
+  _stopPing() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+
+      this.pingInterval = null;
+    }
+  }
+
+  _reconnect() {
+    if (this.reconnectCount > 5) {
+      console.error("Too many reconnects, giving up");
+      this.mayReconnect = false;
+      return;
+    }
+
+    this.reconnectCount++;
+
+    setTimeout(() => {
+      console.log("Reconnecting...");
+      this.open();
+    }, 1000 * this.reconnectCount);
+  }
+}
