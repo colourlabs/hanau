@@ -49,3 +49,11 @@ server.on("myCommand", (data, sessionId, packetId) => {
   server.broadcast("broadcastMsg", { msg: "hi guys!" });
 });
 ```
+
+## install
+
+hanau isn't on the npm registry however you can still install it by running
+
+```
+npm install https://github.com/colourlabs/hanau.git
+```

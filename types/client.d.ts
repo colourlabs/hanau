@@ -26,6 +26,8 @@ export class HanauClient {
     messageListeners: {};
     openListeners: any[];
     closeListeners: any[];
+    extraHandshakeData: {};
+    unsentQueue: any[];
     hanauSessionID: string;
     /**
      * Opens the WebSocket connection
@@ -69,6 +71,10 @@ export class HanauClient {
      * @param {Function} listener
      */
     onClose(listener: Function): void;
+    /**
+     * Destroys Hanau connection
+     */
+    destroy(): void;
     _startPing(): void;
     pingInterval: NodeJS.Timeout;
     _stopPing(): void;

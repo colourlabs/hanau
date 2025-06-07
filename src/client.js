@@ -26,6 +26,9 @@ class HanauClient {
     this.openListeners = [];
     this.closeListeners = [];
 
+    this.extraHandshakeData = {};
+    this.unsentQueue = [];
+
     this.hanauSessionID = `session-${Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)}`;
   }
 
@@ -34,6 +37,10 @@ class HanauClient {
    * @param {any} extraHandshakeData
    */
   open(extraHandshakeData = {}) {
+    if (Object.keys(extraHandshakeData).length > 0) {
+      this.extraHandshakeData = extraHandshakeData;
+    }
+
     this.ws = new WebSocket(this.uri, "hanau");
 
     this.ws.onopen = () => {
@@ -46,9 +53,13 @@ class HanauClient {
         lastReceivedId: this.lastReceivedId,
         ...extraHandshakeData,
       };
-  
+
       this.send("handshake", handshakePayload);
       this._startPing();
+
+      // send unsent queue
+      this.unsentQueue.forEach((packet) => this.ws.send(JSON.stringify(packet)));
+      this.unsentQueue = [];
     };
 
     this.ws.onmessage = (event) => {
@@ -110,17 +121,18 @@ class HanauClient {
    * @param {any} data
    */
   send(command, data) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.warn(`hanau > WebSocket is not open, dropping packet ${command}`);
-      return;
-    };
-
     /** @type {Packet} */
     const packet = {
       id: ++this.lastSentId,
       command,
       data,
     };
+
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn(`hanau > WebSocket is not open, queueing packet ${command}`);
+      this.unsentQueue.push(packet);
+      return;
+    }
 
     this.ws.send(JSON.stringify(packet));
   }
@@ -166,6 +178,18 @@ class HanauClient {
   onClose(listener) {
     this.closeListeners.push(listener);
   }
+
+  /**
+   * Destroys Hanau connection
+   */
+  destroy() {
+    this.close();
+    this._stopPing();
+    this.messageListeners = {};
+    this.openListeners = [];
+    this.closeListeners = [];
+    this.unsentQueue = [];
+  }  
 
   _startPing() {
     if (this.pingInterval) clearInterval(this.pingInterval);

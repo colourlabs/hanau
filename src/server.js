@@ -111,15 +111,16 @@ class HanauServer {
           }
 
           // replay missed messages
-          const history = this.clientHistories.get(sessionId);
-          if (!history) {
-            return;
-          }
-          for (const [id, packet] of history.entries()) {
-            if (id > lastReceivedId) {
-              this._send(extWs, packet);
+          setImmediate(() => {
+            const history = this.clientHistories.get(sessionId);
+            if (!history) return;
+          
+            for (const [id, packet] of history.entries()) {
+              if (id > lastReceivedId) {
+                this._send(extWs, packet);
+              }
             }
-          }
+          });
 
           this.connectionListeners.forEach((fn) => fn(sessionId));
           return;
@@ -139,7 +140,7 @@ class HanauServer {
           return;
         }
 
-        // Dispatch commands to listeners
+        // dispatch commands to listeners
         const handler = this.messageListeners[msg.command];
         if (handler) {
           handler(msg.data, extWs.sessionId, msg.id);
