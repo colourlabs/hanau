@@ -1,6 +1,6 @@
 {
   "name": "hanau",
-  "type": "module",  
+  "type": "module",
   "exports": {
     "import": "./src/index.js"
   },
@@ -13,5 +13,8 @@
   "keywords": [],
   "author": "colourlabs",
   "license": "ISC",
-  "packageManager": "pnpm@10.11.0"
+  "packageManager": "pnpm@10.11.0",
+  "dependencies": {
+    "ws": "^8.18.2"
+  }
 }

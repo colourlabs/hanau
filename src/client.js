@@ -15,7 +15,8 @@ class HanauClient {
    */
   constructor(uri) {
     this.uri = uri;
-    this.ws = null; // WebSocket
+    /** @type {WebSocket | null} */
+    this.ws = null;
     this.alive = false;
     this.lastSentId = 0;
     this.lastReceivedId = 0;
@@ -25,17 +26,21 @@ class HanauClient {
     this.messageListeners = {};
     this.openListeners = [];
     this.closeListeners = [];
+
+    this.hanauSessionID = `session-${Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)}`;
   }
 
   /**
    * Opens the WebSocket connection
    */
   open() {
-    this.ws = new WebSocket(this.uri);
+    this.ws = new WebSocket(this.uri, "hanau");
+
     this.ws.onopen = () => {
       this.alive = true;
       this.reconnectCount = 0;
       this.openListeners.forEach((listener) => listener());
+      this.send("handshake", { sessionId: this.hanauSessionID, lastReceivedId: this.lastReceivedId });
       this._startPing();
     };
 
@@ -49,7 +54,7 @@ class HanauClient {
           this._handleMessage(msg);
         }
       } catch (err) {
-        console.error("Failed to parse JSON message", err);
+        console.error("hanau > Failed to parse JSON message", err);
       }
     };
 
@@ -63,10 +68,13 @@ class HanauClient {
     };
 
     this.ws.onerror = (event) => {
-      console.error("WebSocket error:", event);
+      console.error("hanau > WebSocket error:", event);
     };
   }
 
+  /**
+   * Close current WebSocket connection
+   */
   close() {
     this.mayReconnect = false;
     if (this.ws) this.ws.close();
@@ -163,7 +171,7 @@ class HanauClient {
 
     this.pingInterval = setInterval(() => {
       if (!this.alive) {
-        console.warn("Ping timeout, reconnecting...");
+        console.warn("hanau > ping timeout, reconnecting...");
         this._reconnect();
       } else {
         this.alive = false;
@@ -182,7 +190,7 @@ class HanauClient {
 
   _reconnect() {
     if (this.reconnectCount > 5) {
-      console.error("Too many reconnects, giving up");
+      console.error("hanau > Too many reconnects, giving up");
       this.mayReconnect = false;
       return;
     }
@@ -190,8 +198,10 @@ class HanauClient {
     this.reconnectCount++;
 
     setTimeout(() => {
-      console.log("Reconnecting...");
+      console.log("hanau > Reconnecting...");
       this.open();
     }, 1000 * this.reconnectCount);
   }
 }
+
+export { HanauClient }
