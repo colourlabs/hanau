@@ -12,7 +12,6 @@ export type Packet = {
 export class HanauClient {
     /**
      * Create client
-     *
      * @param {string} uri
      */
     constructor(uri: string);
@@ -30,48 +29,43 @@ export class HanauClient {
     hanauSessionID: string;
     /**
      * Opens the WebSocket connection
+     * @param {any} extraHandshakeData
      */
-    open(): void;
+    open(extraHandshakeData?: any): void;
     /**
      * Close current WebSocket connection
      */
     close(): void;
     /**
      * Handle incoming messages
-     *
      * @param {Packet} msg
      */
     _handleMessage(msg: Packet): void;
     /**
      * Send a command with data to the server
-     *
      * @param {string | number} command
      * @param {any} data
      */
     send(command: string | number, data: any): void;
     /**
      * Register a listener for a specific command
-     *
      * @param {string | number} command
      * @param {(data: any) => void} listener
      */
     on(command: string | number, listener: (data: any) => void): void;
     /**
      * Unregister a listener for a specific command
-     *
      * @param {string | number} command
      * @param {(data: any) => void} [listener]
      */
     off(command: string | number, listener?: (data: any) => void): void;
     /**
      * This will be called when the WebSocket connection opens
-     *
      * @param {Function} listener
      */
     onOpen(listener: Function): void;
     /**
      * This will be called when the WebSocket connection closes
-     *
      * @param {Function} listener
      */
     onClose(listener: Function): void;

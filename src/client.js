@@ -10,7 +10,6 @@
 class HanauClient {
   /**
    * Create client
-   *
    * @param {string} uri
    */
   constructor(uri) {
@@ -32,15 +31,23 @@ class HanauClient {
 
   /**
    * Opens the WebSocket connection
+   * @param {any} extraHandshakeData
    */
-  open() {
+  open(extraHandshakeData = {}) {
     this.ws = new WebSocket(this.uri, "hanau");
 
     this.ws.onopen = () => {
       this.alive = true;
       this.reconnectCount = 0;
       this.openListeners.forEach((listener) => listener());
-      this.send("handshake", { sessionId: this.hanauSessionID, lastReceivedId: this.lastReceivedId });
+
+      const handshakePayload = {
+        sessionId: this.hanauSessionID,
+        lastReceivedId: this.lastReceivedId,
+        ...extraHandshakeData,
+      };
+  
+      this.send("handshake", handshakePayload);
       this._startPing();
     };
 
@@ -82,7 +89,6 @@ class HanauClient {
 
   /**
    * Handle incoming messages
-   *
    * @param {Packet} msg
    */
   _handleMessage(msg) {
@@ -100,7 +106,6 @@ class HanauClient {
 
   /**
    * Send a command with data to the server
-   *
    * @param {string | number} command
    * @param {any} data
    */
@@ -122,7 +127,6 @@ class HanauClient {
 
   /**
    * Register a listener for a specific command
-   *
    * @param {string | number} command
    * @param {(data: any) => void} listener
    */
@@ -135,7 +139,6 @@ class HanauClient {
 
   /**
    * Unregister a listener for a specific command
-   *
    * @param {string | number} command
    * @param {(data: any) => void} [listener]
    */
@@ -150,7 +153,6 @@ class HanauClient {
 
   /**
    * This will be called when the WebSocket connection opens
-   *
    * @param {Function} listener
    */
   onOpen(listener) {
@@ -159,7 +161,6 @@ class HanauClient {
 
   /**
    * This will be called when the WebSocket connection closes
-   *
    * @param {Function} listener
    */
   onClose(listener) {
@@ -204,4 +205,4 @@ class HanauClient {
   }
 }
 
-export { HanauClient }
+export { HanauClient };
