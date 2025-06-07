@@ -2,12 +2,12 @@
   "name": "hanau",
   "type": "module",
   "exports": {
-    "import": "./src/index.js"
+    "import": "./src/index.js",
+    "types": "./types/index.d.ts"
   },
   "main": "./src/index.js",
   "version": "1.0.0",
   "description": "a custom WebSocket wrapper that doesn't suck",
-  "types": "./types/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
