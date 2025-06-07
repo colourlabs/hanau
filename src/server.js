@@ -1,5 +1,6 @@
 // @ts-check
 import { WebSocketServer } from "ws";
+import { IncomingMessage } from "node:http";
 
 /**
  * @typedef {import("ws").WebSocket & { sessionId?: string, isAlive?: boolean, lastSentId?: number }} HanauWebSocket
@@ -55,8 +56,11 @@ class HanauServer {
     /** @type {Array<(sessionId: string) => void>} */
     this.disconnectionListeners = [];
 
+    /** @type {Array<(msg: any, request: IncomingMessage) => Promise<true | { code: number, reason: string }>>} */
+    this.handshakeListeners = [];
+
     // Handle new connections
-    this.wss.on("connection", (ws) => {
+    this.wss.on("connection", (ws, request) => {
       /** @type {HanauWebSocket} */
       const extWs = ws;
       extWs.isAlive = true;
@@ -66,7 +70,7 @@ class HanauServer {
         extWs.isAlive = true;
       });
 
-      extWs.on("message", (raw) => {
+      extWs.on("message", async (raw) => {
         let msg;
         try {
           msg = JSON.parse(raw.toString());
@@ -82,6 +86,14 @@ class HanauServer {
           if (!sessionId) {
             extWs.close(4001, "handshake missing sessionId");
             return;
+          }
+
+          for (const hook of this.handshakeListeners) {
+            const result = await hook(msg.data, request);
+            if (result !== true) {
+              extWs.close(result.code, result.reason);
+              return;
+            }
           }
 
           if (this.clients.has(sessionId)) {
@@ -190,6 +202,14 @@ class HanauServer {
    */
   onDisconnection(fn) {
     this.disconnectionListeners.push(fn);
+  }
+
+  /**
+   * Register handshake handler (hooks into Hanou's handshake message)
+   * @param {(data: any, req: IncomingMessage) => Promise<true | { code: number, reason: string }>} fn
+   */
+  onHandshake(fn) {
+    this.handshakeListeners.push(fn);
   }
 
   /**

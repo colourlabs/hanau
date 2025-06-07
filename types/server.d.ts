@@ -46,6 +46,11 @@ export class HanauServer {
     connectionListeners: Array<(sessionId: string) => void>;
     /** @type {Array<(sessionId: string) => void>} */
     disconnectionListeners: Array<(sessionId: string) => void>;
+    /** @type {Array<(msg: any, request: IncomingMessage) => Promise<true | { code: number, reason: string }>>} */
+    handshakeListeners: Array<(msg: any, request: IncomingMessage) => Promise<true | {
+        code: number;
+        reason: string;
+    }>>;
     pingInterval: NodeJS.Timeout;
     /**
      * Register a command handler
@@ -64,6 +69,14 @@ export class HanauServer {
      * @param {(sessionId: string) => void} fn
      */
     onDisconnection(fn: (sessionId: string) => void): void;
+    /**
+     * Register handshake handler (hooks into Hanou's handshake message)
+     * @param {(data: any, req: IncomingMessage) => Promise<true | { code: number, reason: string }>} fn
+     */
+    onHandshake(fn: (data: any, req: IncomingMessage) => Promise<true | {
+        code: number;
+        reason: string;
+    }>): void;
     /**
      * Send a packet to a specific client
      * @param {string} sessionId
@@ -89,3 +102,4 @@ export class HanauServer {
     close(): void;
 }
 import { WebSocketServer } from "ws";
+import { IncomingMessage } from "node:http";
