@@ -34,7 +34,7 @@ class HanauClient {
 
   /**
    * Opens the WebSocket connection
-   * @param {any} [extraHandshakeData] Extra data you want to put in the "handshake" command
+   * @param {any} [extraHandshakeData] Extra data you want to put in the "handshake" command. This persists on reconnection
    */
   open(extraHandshakeData) {
     if (extraHandshakeData !== undefined) {
