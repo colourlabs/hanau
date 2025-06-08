@@ -36,7 +36,7 @@ class HanauClient {
    * Opens the WebSocket connection
    * @param {any} extraHandshakeData
    */
-  open(extraHandshakeData = {}) {
+  open(extraHandshakeData) {
     if (extraHandshakeData !== null) {
       this.extraHandshakeData = extraHandshakeData;
     }
