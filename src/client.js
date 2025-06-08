@@ -34,10 +34,10 @@ class HanauClient {
 
   /**
    * Opens the WebSocket connection
-   * @param {any} extraHandshakeData
+   * @param {any} [extraHandshakeData] Extra data you want to put in the "handshake" command
    */
   open(extraHandshakeData) {
-    if (extraHandshakeData !== null) {
+    if (extraHandshakeData !== undefined) {
       this.extraHandshakeData = extraHandshakeData;
     }
 
@@ -117,8 +117,8 @@ class HanauClient {
 
   /**
    * Send a command with data to the server
-   * @param {string | number} command
-   * @param {any} data
+   * @param {string | number} command 
+   * @param {any} data 
    */
   send(command, data) {
     /** @type {Packet} */

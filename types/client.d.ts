@@ -31,7 +31,7 @@ export class HanauClient {
     hanauSessionID: string;
     /**
      * Opens the WebSocket connection
-     * @param {any} extraHandshakeData
+     * @param {any} [extraHandshakeData] Extra data you want to put in the "handshake" command
      */
     open(extraHandshakeData?: any): void;
     /**
