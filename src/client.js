@@ -51,7 +51,7 @@ class HanauClient {
       const handshakePayload = {
         sessionId: this.hanauSessionID,
         lastReceivedId: this.lastReceivedId,
-        ...extraHandshakeData,
+        ...this.extraHandshakeData,
       };
 
       this.send("handshake", handshakePayload);
@@ -226,7 +226,7 @@ class HanauClient {
 
     setTimeout(() => {
       if (!this.mayReconnect) return;
-      
+
       console.log("hanau > reconnecting...");
       this.open();
     }, 1000 * this.reconnectCount);
