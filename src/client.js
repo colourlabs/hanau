@@ -37,7 +37,7 @@ class HanauClient {
    * @param {any} extraHandshakeData
    */
   open(extraHandshakeData = {}) {
-    if (Object.keys(extraHandshakeData).length > 0) {
+    if (extraHandshakeData !== null) {
       this.extraHandshakeData = extraHandshakeData;
     }
 
@@ -214,6 +214,8 @@ class HanauClient {
   }
 
   _reconnect() {
+    if (!this.mayReconnect) return;
+
     if (this.reconnectCount > 5) {
       console.error("hanau > too many reconnects, giving up");
       this.mayReconnect = false;
@@ -223,6 +225,8 @@ class HanauClient {
     this.reconnectCount++;
 
     setTimeout(() => {
+      if (!this.mayReconnect) return;
+      
       console.log("hanau > reconnecting...");
       this.open();
     }, 1000 * this.reconnectCount);
