@@ -21,6 +21,7 @@ class HanauClient {
     this.lastReceivedId = 0;
     this.reconnectCount = 0;
     this.mayReconnect = true;
+    this.handshakeComplete = false;
 
     this.messageListeners = {};
     this.openListeners = [];
@@ -30,6 +31,16 @@ class HanauClient {
     this.unsentQueue = [];
 
     this.hanauSessionID = `session-${Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)}`;
+
+    this.on("handshake_ack", () => {
+      console.log("hanau > handshake acknowledged by server");
+      this.handshakeComplete = true;
+      clearTimeout(this._handshakeTimeout);
+
+      // send unsent queue
+      this.unsentQueue.forEach((packet) => this.ws.send(JSON.stringify(packet)));
+      this.unsentQueue = [];
+    });
   }
 
   /**
@@ -54,12 +65,16 @@ class HanauClient {
         ...this.extraHandshakeData,
       };
 
+      this.handshakeComplete = false;
       this.send("handshake", handshakePayload);
       this._startPing();
 
-      // send unsent queue
-      this.unsentQueue.forEach((packet) => this.ws.send(JSON.stringify(packet)));
-      this.unsentQueue = [];
+      this._handshakeTimeout = setTimeout(() => {
+        if (!this.handshakeComplete) {
+          console.warn("hanau > handshake ack not received, reconnecting...");
+          this._reconnect();
+        }
+      }, 3000);
     };
 
     this.ws.onmessage = (event) => {

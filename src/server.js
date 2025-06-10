@@ -106,6 +106,8 @@ class HanauServer {
           extWs.sessionId = sessionId;
           this.clients.set(sessionId, extWs);
 
+          this._send(extWs, { id: msg.id, command: "handshake_ack", data: null });
+
           if (!this.clientHistories.has(sessionId)) {
             this.clientHistories.set(sessionId, new Map());
           }
