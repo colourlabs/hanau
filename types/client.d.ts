@@ -23,6 +23,7 @@ export class HanauClient {
     lastReceivedId: number;
     reconnectCount: number;
     mayReconnect: boolean;
+    handshakeComplete: boolean;
     messageListeners: {};
     openListeners: any[];
     closeListeners: any[];
@@ -31,9 +32,10 @@ export class HanauClient {
     hanauSessionID: string;
     /**
      * Opens the WebSocket connection
-     * @param {any} [extraHandshakeData] Extra data you want to put in the "handshake" command
+     * @param {any} [extraHandshakeData] Extra data you want to put in the "handshake" command. This persists on reconnection
      */
     open(extraHandshakeData?: any): void;
+    _handshakeTimeout: NodeJS.Timeout;
     /**
      * Close current WebSocket connection
      */
